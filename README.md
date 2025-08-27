@@ -1,36 +1,68 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Previsão de Confrontos de Futebol com xG/xGA
 
-## Getting Started
+Uma aplicação para calcular **probabilidades de vitória, empate e derrota** em partidas de futebol usando métricas avançadas **xG (Expected Goals)** e **xGA (Expected Goals Against)** combinadas com a **distribuição de Poisson**.
 
-First, run the development server:
+O backend utiliza dados mock e o frontend exibe os confrontos e probabilidades de forma dinâmica.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Métricas Utilizadas
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### xG — Expected Goals
+Mede a quantidade de gols que um time “deveria” marcar com base na qualidade e posição de suas finalizações.
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+### xGA — Expected Goals Against
+Mede a quantidade de gols que um time “deveria” sofrer com base nas finalizações do adversário.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+**Justificativa:**
+- Avalia o desempenho real de ataque e defesa de cada time.
+- Corrige distorções de resultados brutos.
+- Exemplo: um time perde por 1x0, mas teve 3 xG contra 0.5 xG do adversário — o modelo reconhece que perdeu apesar de ter sido estatisticamente superior.
 
-## Learn More
+## Cálculo de Probabilidades
 
-To learn more about Next.js, take a look at the following resources:
+Para cada confronto:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. **Gols esperados ajustados para a partida:**
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+\[
+\lambda_\text{home} = \frac{xG_\text{home} + xGA_\text{away}}{2}, \quad
+\lambda_\text{away} = \frac{xG_\text{away} + xGA_\text{home}}{2}
+\]
 
-## Deploy on Vercel
+- Mantém a distinção casa vs visitante, refletindo vantagem de jogar em casa.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+2. **Distribuição de Poisson:**
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+\[
+P(k \text{ gols}) = \frac{\lambda^k e^{-\lambda}}{k!}
+\]
+
+- Calcula a probabilidade de cada placar até um limite (ex.: 5 gols).  
+- Soma para determinar: vitória do time da casa, empate ou vitória do visitante.
+
+## Justificativa do Fator Casa
+
+- **Vantagem estatística:** times em casa têm mais posse, finalizações e maior taxa de conversão.  
+- **Ataque x defesa realistas:** `lambda_home` combina ataque do time da casa com defesa do visitante e vice-versa.  
+- **Maior precisão:** média simétrica ignora essa vantagem e gera previsões menos confiáveis.
+
+## Limitações do Modelo
+
+- **Predominância de favoritos:** times com xG alto e xGA baixo tendem a aparecer “invencíveis”.  
+- **Ignora fatores externos:** lesões, clima, motivação, arbitragens.  
+- **Determinístico:** pequenas diferenças em xG/xGA podem gerar grandes diferenças nas probabilidades.  
+- **Distribuição de Poisson:** assume gols independentes e taxa constante, sem capturar momentum ou ajustes táticos.
+
+**Mitigações:**
+- Combinar métricas adicionais: finalizações, posse de bola, forma recente.  
+- Normalizar xG/xGA para evitar extremos.
+
+## Tecnologias
+
+- **Frontend:** React/Next.js  
+- **Backend:** Next.js API Routes  
+- **Estatística:** Distribuição de Poisson aplicada a métricas xG/xGA
+
+## Uso
+
+- Frontend consome o endpoint `/api/previsoes`.  
+- Backend retorna todos os confrontos possíveis entre os times definidos em mock com probabilidades calculadas.
