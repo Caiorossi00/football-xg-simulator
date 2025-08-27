@@ -23,10 +23,11 @@ Para cada confronto:
 
 1. **Gols esperados ajustados para a partida:**
 
-\[
+$$
 \lambda_\text{home} = \frac{xG_\text{home} + xGA_\text{away}}{2}, \quad
 \lambda_\text{away} = \frac{xG_\text{away} + xGA_\text{home}}{2}
-\]
+$$
+
 
 - Mantém a distinção casa vs visitante, refletindo vantagem de jogar em casa.
 
