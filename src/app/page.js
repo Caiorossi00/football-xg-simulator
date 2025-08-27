@@ -2,44 +2,32 @@
 
 import { useEffect, useState } from "react";
 
-// Função para aplicar variação aleatória de ±10%
 function aplicarVariacao(valor) {
-  const variacao = 0.1; // 10%
-  const fator = 1 + (Math.random() * 2 - 1) * variacao; // entre 0.9 e 1.1
+  const variacao = 0.1;
+  const fator = 1 + (Math.random() * 2 - 1) * variacao;
   return valor * fator;
 }
 
 export default function Dashboard() {
-  const [matches, setMatches] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [matches, setMatches] = useState(null); // null para renderizar loader no SSR
 
   useEffect(() => {
     async function fetchData() {
-      try {
-        const res = await fetch("/api/previsoes");
-        const data = await res.json();
-
-        // Aplicar variação apenas para o time da casa
-        const dataComVariacao = data.map((match) => ({
-          ...match,
-          probabilidades: {
-            ...match.probabilidades,
-            vitória_home: aplicarVariacao(match.probabilidades.vitória_home),
-          },
-        }));
-
-        setMatches(dataComVariacao);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
+      const res = await fetch("/api/previsoes");
+      const data = await res.json();
+      const dataComVariacao = data.map((match) => ({
+        ...match,
+        probabilidades: {
+          ...match.probabilidades,
+          vitória_home: aplicarVariacao(match.probabilidades.vitória_home),
+        },
+      }));
+      setMatches(dataComVariacao);
     }
-
     fetchData();
   }, []);
 
-  if (loading) return <p>Carregando previsões...</p>;
+  if (!matches) return <p>Carregando previsões...</p>;
 
   return (
     <div>
